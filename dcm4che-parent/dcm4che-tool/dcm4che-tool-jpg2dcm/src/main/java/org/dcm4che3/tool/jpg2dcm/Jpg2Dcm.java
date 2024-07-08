@@ -205,6 +205,9 @@ public class Jpg2Dcm {
         supplementMissingValue(staticMetadata, Tag.SeriesNumber, "999");
         supplementMissingValue(staticMetadata, Tag.InstanceNumber, "1");
         supplementType2Tags(staticMetadata);
+        staticMetadata.setString(Tag.PatientName, VR.PN, "John Doe");
+        staticMetadata.setString(Tag.PatientID, VR.LO, "123456");
+        staticMetadata.setString(Tag.StudyDescription, VR.LO, "Test Study");
     }
 
     private void convert(List<String> args) throws Exception {
