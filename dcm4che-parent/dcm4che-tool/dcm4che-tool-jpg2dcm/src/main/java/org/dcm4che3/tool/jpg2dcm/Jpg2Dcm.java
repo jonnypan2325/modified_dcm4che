@@ -123,15 +123,8 @@ public class Jpg2Dcm {
         try {
             CommandLine cl = parseComandLine(args);
             Jpg2Dcm main = new Jpg2Dcm();
-            List<String> argList = cl.getArgList();
-            int argc = argList.size();
-            if (argc < 2)
-                throw new ParseException(rb.getString("missing"));
-            File dest = new File(argList.get(argc-1));
-            if ((argc > 2 || new File(argList.get(0)).isDirectory())
-                    && !dest.isDirectory())
-                throw new ParseException(
-                        MessageFormat.format(rb.getString("nodestdir"), dest));
+            String sourceDir = "source";
+            String destDir = "destination;
             main.setNoAPPn(cl.hasOption("no-app"));
             main.setPhoto(cl.hasOption("xc"));
             main.setTSUID(cl.getOptionValue("tsuid"));
@@ -140,7 +133,7 @@ public class Jpg2Dcm {
             if (cl.hasOption("F"))
                 main.setFragmentLength(Long.parseLong(cl.getOptionValue("F")));
             createStaticMetadata(cl, main.staticMetadata);
-            main.convert(cl.getArgList());
+            main.convert(sourceDir, destDir);
         } catch (ParseException e) {
             System.err.println("jpg2dcm: " + e.getMessage());
             System.err.println(rb.getString("try"));
@@ -210,18 +203,10 @@ public class Jpg2Dcm {
         staticMetadata.setString(Tag.StudyDescription, VR.LO, "Test Study");
     }
 
-    private void convert(List<String> args) throws Exception {
-        int argsSize = args.size();
-        Path destPath = Paths.get(args.get(argsSize - 1));
-        for (String src : args.subList(0, argsSize - 1)) {
-            Path srcPath = Paths.get(src);
-            if (Files.isDirectory(srcPath))
-                Files.walkFileTree(srcPath, new Jpg2DcmFileVisitor(srcPath, destPath));
-            else if (Files.isDirectory(destPath))
-                convert(srcPath, destPath.resolve(srcPath.getFileName() + ".dcm"));
-            else
-                convert(srcPath, destPath);
-        }
+    private void convert(String sourceDir, String destDir) throws Exception {
+        Path srcPath = Paths.get(sourceDir);
+        Path destPath = Paths.get(destDir);
+        Files.walkFileTree(srcPath, new Jpg2DcmFileVisitor(srcPath, destPath));
     }
 
     class Jpg2DcmFileVisitor extends SimpleFileVisitor<Path> {
@@ -237,7 +222,7 @@ public class Jpg2Dcm {
         public FileVisitResult visitFile(Path srcFilePath, BasicFileAttributes attrs) throws IOException {
             Path destFilePath = resolveDestFilePath(srcFilePath);
             if (!Files.isDirectory(destFilePath))
-                Files.createDirectories(destFilePath);
+                Files.createDirectories(destFilePath.getParent()));
             try {
                 convert(srcFilePath, destFilePath.resolve(srcFilePath.getFileName() + ".dcm"));
             } catch (SAXException | ParserConfigurationException e) {
