@@ -124,7 +124,7 @@ public class Jpg2Dcm {
             CommandLine cl = parseComandLine(args);
             Jpg2Dcm main = new Jpg2Dcm();
             String sourceDir = "source";
-            String destDir = "destination;
+            String destDir = "destination";
             main.setNoAPPn(cl.hasOption("no-app"));
             main.setPhoto(cl.hasOption("xc"));
             main.setTSUID(cl.getOptionValue("tsuid"));
@@ -222,7 +222,7 @@ public class Jpg2Dcm {
         public FileVisitResult visitFile(Path srcFilePath, BasicFileAttributes attrs) throws IOException {
             Path destFilePath = resolveDestFilePath(srcFilePath);
             if (!Files.isDirectory(destFilePath))
-                Files.createDirectories(destFilePath.getParent()));
+                Files.createDirectories(destFilePath.getParent());
             try {
                 convert(srcFilePath, destFilePath.resolve(srcFilePath.getFileName() + ".dcm"));
             } catch (SAXException | ParserConfigurationException e) {
