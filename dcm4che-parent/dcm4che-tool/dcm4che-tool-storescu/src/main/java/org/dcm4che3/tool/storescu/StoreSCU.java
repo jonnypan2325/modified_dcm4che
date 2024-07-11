@@ -234,6 +234,22 @@ public class StoreSCU {
                 .desc(rb.getString("rel-sop-classes"))
                 .longOpt("rel-sop-classes").build());
     }
+    
+    private static void processDirectory(StoreSCU main, String dirPath) throws IOException {
+        File dir = new File(dirPath);
+        if (!dir.isDirectory()) {
+            throw new IOException("Not a valid directory: " + dir.getAbsolutePath());
+        }
+        File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".dcm"));
+        if (files != null) {
+            List<String> filePaths = new ArrayList<>();
+            for (File file : files) {
+                filePaths.add(file.getAbsolutePath());
+            }
+            main.scanFiles(filePaths);
+            main.sendFiles();
+        }
+    }
 
     public static void main(String[] args) {
         long t1, t2;
@@ -262,17 +278,24 @@ public class StoreSCU {
             if (echo) {
                 configureStorageSOPClasses(main, cl);
             } else {
-                System.out.println(rb.getString("scanning"));
-                t1 = System.currentTimeMillis();
-                main.scanFiles(argList);
-                t2 = System.currentTimeMillis();
-                int n = main.filesScanned;
-                System.out.println();
-                if (n == 0)
-                    return;
-                System.out.println(MessageFormat.format(
-                        rb.getString("scanned"), n, (t2 - t1) / 1000F,
-                        (t2 - t1) / n));
+                for (String arg : argList) {
+                    if (arg.endsWith("*")) {
+                        String dirPath = arg.substring(0, arg.length() - 1);
+                        processDirectory(main, dirPath);
+                    } else {
+                        System.out.println(rb.getString("scanning"));
+                        t1 = System.currentTimeMillis();
+                        main.scanFiles(Collections.singletonList(arg));
+                        t2 = System.currentTimeMillis();
+                        int n = main.filesScanned;
+                        System.out.println();
+                        if (n == 0)
+                            return;
+                        System.out.println(MessageFormat.format(
+                                rb.getString("scanned"), n, (t2 - t1) / 1000F,
+                                (t2 - t1) / n));
+                    }
+                }
             }
             ExecutorService executorService = Executors
                     .newSingleThreadExecutor();
