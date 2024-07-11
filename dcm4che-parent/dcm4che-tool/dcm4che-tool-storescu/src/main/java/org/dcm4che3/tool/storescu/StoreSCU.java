@@ -426,29 +426,38 @@ public class StoreSCU {
         }
     }
 
-    public void sendFiles() throws IOException {
-        BufferedReader fileInfos = new BufferedReader(new InputStreamReader(
-                new FileInputStream(tmpFile)));
-        try {
+    private List<String[]> readFileInfos() throws IOException {
+        List<String[]> fileInfosList = new ArrayList<>();
+        try (BufferedReader fileInfos = new BufferedReader(new InputStreamReader(
+                new FileInputStream(tmpFile)))) {
             String line;
-            while (as.isReadyForDataTransfer()
-                    && (line = fileInfos.readLine()) != null) {
+            while ((line = fileInfos.readLine()) != null) {
                 String[] ss = StringUtils.split(line, '\t');
+                fileInfosList.add(ss);
+            }
+        }
+        return fileInfosList;
+    }
+
+    public void sendFiles() throws IOException {
+        List<String[]> fileInfosList = readFileInfos();
+        for (String[] ss : fileInfosList) {
+            boolean success = false;
+            while (!success) {
                 try {
-                    send(new File(ss[4]), Long.parseLong(ss[3]), ss[1], ss[0],
-                            ss[2]);
+                    if (!as.isReadyForDataTransfer()) {
+                        open(); 
+                    }
+                    send(new File(ss[4]), Long.parseLong(ss[3]), ss[1], ss[0], ss[2]);
+                    as.waitForOutstandingRSP(); 
+                    success = true;
                 } catch (Exception e) {
                     e.printStackTrace();
+                    close(); 
                 }
             }
-            try {
-                as.waitForOutstandingRSP();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } finally {
-            SafeClose.close(fileInfos);
         }
+        close();
     }
 
     public boolean addFile(BufferedWriter fileInfos, File f, long endFmi,
@@ -557,12 +566,15 @@ public class StoreSCU {
             if (as.isReadyForDataTransfer())
                 as.release();
             as.waitForSocketClose();
+            as = null;
         }
     }
 
     public void open() throws IOException, InterruptedException,
             IncompatibleConnectionException, GeneralSecurityException {
-        as = ae.connect(remote, rq);
+        if (as == null || !as.isReadyForDataTransfer()) {
+            as = ae.connect(remote, rq);
+        }
     }
 
     private void onCStoreRSP(Attributes cmd, File f) {
