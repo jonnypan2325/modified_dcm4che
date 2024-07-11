@@ -441,32 +441,40 @@ public class StoreSCU {
 
     public void sendFiles() throws IOException {
         List<String[]> fileInfosList = readFileInfos();
-        for (String[] ss : fileInfosList) {
-            boolean success = false;
-            while (!success) {
-                try {
-                    if (!as.isReadyForDataTransfer()) {
-                        open(); 
-                    }
-                    send(new File(ss[4]), Long.parseLong(ss[3]), ss[1], ss[0], ss[2]);
-                    as.waitForOutstandingRSP(); 
-                    success = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
+        int fileIndex = 0;
+
+        while (fileIndex < fileInfosList.size()) {
+            try {
+                open(); 
+                
+                for (; fileIndex < fileInfosList.size(); fileIndex++) {
+                    String[] ss = fileInfosList.get(fileIndex);
                     try {
-                        close();
-                    } catch (InterruptedException ie) {
-                        ie.printStackTrace();
+                        send(new File(ss[4]), Long.parseLong(ss[3]), ss[1], ss[0], ss[2]);
+                        as.waitForOutstandingRSP(); 
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        break; 
                     }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    close(); 
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if (fileIndex < fileInfosList.size()) {
+                    System.out.println("Re-opening association to continue sending remaining files...");
                 }
             }
         }
-        try {
-            close(); 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
+
+
+
 
     public boolean addFile(BufferedWriter fileInfos, File f, long endFmi,
             Attributes fmi, Attributes ds) throws IOException {
