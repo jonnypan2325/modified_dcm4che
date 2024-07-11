@@ -453,11 +453,19 @@ public class StoreSCU {
                     success = true;
                 } catch (Exception e) {
                     e.printStackTrace();
-                    close(); 
+                    try {
+                        close();
+                    } catch (InterruptedException ie) {
+                        ie.printStackTrace();
+                    }
                 }
             }
         }
-        close();
+        try {
+            close(); 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean addFile(BufferedWriter fileInfos, File f, long endFmi,

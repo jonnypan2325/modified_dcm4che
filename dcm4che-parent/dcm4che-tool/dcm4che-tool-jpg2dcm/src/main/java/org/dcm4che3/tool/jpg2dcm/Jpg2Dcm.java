@@ -310,10 +310,11 @@ public class Jpg2Dcm {
 
     private static void supplementMissingUIDs(Attributes metadata) {
         for (int tag : IUID_TAGS)
-            if (!metadata.containsValue(tag))
+            if (!metadata.containsValue(tag)) {
                 String newUID = UIDUtils.createUID();
                 metadata.setString(tag, VR.UI, newUID);
-        		System.out.println("Generated new UID for tag" +  + DICT.keywordOf(tag) + ": " + newUID);
+        		System.out.println("Generated new UID for tag" +  DICT.keywordOf(tag) + ": " + newUID);
+            }
     }
 
     private static void supplementMissingValue(Attributes metadata, int tag, String value) {
